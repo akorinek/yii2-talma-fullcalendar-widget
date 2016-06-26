@@ -27,7 +27,7 @@ class FullCalendarAsset extends AssetBundle
     /**
      * @inheritdoc
      */
-    public $js = ['lib/moment.min.js', 'fullcalendar.js'];
+    public $js = ['lib/moment.min.js', 'fullcalendar.js','scheduler.js'];
 
     /**
      * @var string App language
@@ -44,7 +44,7 @@ class FullCalendarAsset extends AssetBundle
      */
     public function init()
     {
-        $this->css = ['fullcalendar.css'];
+        $this->css = ['fullcalendar.css','scheduler.css'];
         $this->sourcePath = __DIR__ . '/../assets';
         parent::init();
     }
