@@ -6,7 +6,7 @@
  * @version 1.0.0
  */
 
-namespace talma\widgets;
+namespace akorinek\widgets;
 
 use yii\web\AssetBundle;
 use Yii;
