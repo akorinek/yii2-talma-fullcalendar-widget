@@ -1,6 +1,6 @@
 
 /*!
-FullCalendar Scheduler v1.5.1
+FullCalendar Scheduler v1.6.0
 Docs & License: https://fullcalendar.io/scheduler/
 (c) 2017 Adam Shaw
  */
@@ -19,7 +19,7 @@ Docs & License: https://fullcalendar.io/scheduler/
 		factory(jQuery, moment);
 	}
 })(function($, moment) {;
-var COL_MIN_WIDTH, Calendar, CalendarExtension, Class, ClippedScroller, CoordCache, DEFAULT_GRID_DURATION, DragListener, EmitterMixin, EnhancedScroller, EventRow, FC, Grid, HRowGroup, LICENSE_INFO_URL, ListenerMixin, MAX_AUTO_CELLS, MAX_AUTO_SLOTS_PER_LABEL, MAX_CELLS, MIN_AUTO_LABELS, PRESET_LICENSE_KEYS, Promise, RELEASE_DATE, ResourceAgendaView, ResourceBasicView, ResourceDayGrid, ResourceDayTableMixin, ResourceGridMixin, ResourceManager, ResourceMonthView, ResourceRow, ResourceTimeGrid, ResourceTimelineGrid, ResourceTimelineView, ResourceViewMixin, RowGroup, RowParent, STOCK_SUB_DURATIONS, ScrollFollower, ScrollFollowerSprite, ScrollJoiner, ScrollerCanvas, Spreadsheet, TaskQueue, TimelineGrid, TimelineView, UPGRADE_WINDOW, VRowGroup, VertResourceViewMixin, View, _filterResourcesWithEvents, applyAll, capitaliseFirstLetter, compareByFieldSpecs, computeIntervalUnit, computeOffsetForSeg, computeOffsetForSegs, copyRect, createObject, cssToStr, debounce, detectWarningInContainer, divideDurationByDuration, divideRangeByDuration, durationHasTime, flexibleCompare, getContentRect, getOuterRect, getOwnCells, getRectHeight, getRectWidth, getScrollbarWidths, hContainRect, htmlEscape, intersectRanges, intersectRects, isImmuneUrl, isInt, isValidKey, joinRects, multiplyDuration, origExecuteEventsRender, origGetSegCustomClasses, origGetSegDefaultBackgroundColor, origGetSegDefaultBorderColor, origGetSegDefaultTextColor, origHandleDate, origOnDateRender, origRemoveElement, origSetElement, parseFieldSpecs, processLicenseKey, proxy, renderingWarningInContainer, testRectContains, testRectHContains, testRectVContains, timeRowSegsCollide, vContainRect,
+var COL_MIN_WIDTH, Calendar, CalendarExtension, Class, ClippedScroller, CoordCache, DEFAULT_GRID_DURATION, DragListener, EmitterMixin, EnhancedScroller, EventRow, FC, Grid, HRowGroup, LICENSE_INFO_URL, ListenerMixin, MAX_AUTO_CELLS, MAX_AUTO_SLOTS_PER_LABEL, MAX_CELLS, MIN_AUTO_LABELS, PRESET_LICENSE_KEYS, Promise, RELEASE_DATE, ResourceAgendaView, ResourceBasicView, ResourceDayGrid, ResourceDayTableMixin, ResourceGridMixin, ResourceManager, ResourceMonthView, ResourceRow, ResourceTimeGrid, ResourceTimelineGrid, ResourceTimelineView, ResourceViewMixin, RowGroup, RowParent, STOCK_SUB_DURATIONS, ScrollFollower, ScrollFollowerSprite, ScrollJoiner, ScrollerCanvas, Spreadsheet, TaskQueue, TimelineGrid, TimelineView, UPGRADE_WINDOW, VRowGroup, VertResourceViewMixin, View, _filterResourcesWithEvents, applyAll, capitaliseFirstLetter, compareByFieldSpecs, computeGreatestUnit, computeOffsetForSeg, computeOffsetForSegs, copyRect, createObject, cssToStr, debounce, detectWarningInContainer, divideDurationByDuration, divideRangeByDuration, durationHasTime, flexibleCompare, getContentRect, getOuterRect, getOwnCells, getRectHeight, getRectWidth, getScrollbarWidths, hContainRect, htmlEscape, intersectRanges, intersectRects, isImmuneUrl, isInt, isValidKey, joinRects, multiplyDuration, origExecuteEventsRender, origGetSegCustomClasses, origGetSegDefaultBackgroundColor, origGetSegDefaultBorderColor, origGetSegDefaultTextColor, origHandleDate, origOnDateRender, origRemoveElement, origSetElement, parseFieldSpecs, processLicenseKey, proxy, renderingWarningInContainer, testRectContains, testRectHContains, testRectVContains, timeRowSegsCollide, vContainRect,
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty,
   indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; },
@@ -27,7 +27,7 @@ var COL_MIN_WIDTH, Calendar, CalendarExtension, Class, ClippedScroller, CoordCac
 
 FC = $.fullCalendar;
 
-FC.schedulerVersion = "1.5.1";
+FC.schedulerVersion = "1.6.0";
 
 if (FC.internalApiVersion !== 8) {
   FC.warn('v' + FC.schedulerVersion + ' of FullCalendar Scheduler ' + 'is incompatible with v' + FC.version + ' of the core.\n' + 'Please see http://fullcalendar.io/support/ for more information.');
@@ -54,7 +54,7 @@ DragListener = FC.DragListener;
 
 htmlEscape = FC.htmlEscape;
 
-computeIntervalUnit = FC.computeIntervalUnit;
+computeGreatestUnit = FC.computeGreatestUnit;
 
 proxy = FC.proxy;
 
@@ -128,6 +128,8 @@ EnhancedScroller = (function(superClass) {
   EnhancedScroller.prototype.isScrolling = false;
 
   EnhancedScroller.prototype.isTouching = false;
+
+  EnhancedScroller.prototype.isTouchedEver = false;
 
   EnhancedScroller.prototype.isMoving = false;
 
@@ -224,7 +226,8 @@ EnhancedScroller = (function(superClass) {
   };
 
   EnhancedScroller.prototype.reportTouchStart = function() {
-    return this.isTouching = true;
+    this.isTouching = true;
+    return this.isTouchedEver = true;
   };
 
   EnhancedScroller.prototype.reportTouchEnd = function() {
@@ -660,7 +663,7 @@ ScrollFollower = (function() {
     this.sprites = [];
     scroller.on('scroll', (function(_this) {
       return function() {
-        if (scroller.isTouching) {
+        if (scroller.isTouchedEver) {
           _this.isTouch = true;
           return _this.isForcedRelative = true;
         } else {
@@ -1106,7 +1109,7 @@ CalendarExtension = (function(superClass) {
         viewClass = spec.resourceClass;
       }
     }
-    return new viewClass(this, viewType, spec.options, spec.duration);
+    return new viewClass(this, spec);
   };
 
   CalendarExtension.prototype.getResources = function() {
@@ -1509,7 +1512,7 @@ this function expects the view's start/end to be already populated.
 
 View.prototype.requestResources = function() {
   if (this.opt('refetchResourcesOnNavigate')) {
-    return this.calendar.resourceManager.getResources(this.start, this.end);
+    return this.calendar.resourceManager.getResources(this.activeRange.start, this.activeRange.end);
   } else {
     return this.calendar.resourceManager.getResources();
   }
@@ -1523,7 +1526,7 @@ this function expects the view's start/end to be already populated.
 
 View.prototype.fetchResources = function() {
   if (this.opt('refetchResourcesOnNavigate')) {
-    return this.calendar.resourceManager.fetchResources(this.start, this.end);
+    return this.calendar.resourceManager.fetchResources(this.activeRange.start, this.activeRange.end);
   } else {
     return this.calendar.resourceManager.fetchResources();
   }
@@ -2262,14 +2265,14 @@ VertResourceViewMixin = $.extend({}, ResourceViewMixin, {
 
 ResourceGridMixin = {
   allowCrossResource: true,
-  eventRangeToSpans: function(range, event) {
+  eventRangeToSpans: function(eventRange, event) {
     var j, len, resourceId, resourceIds, results;
     resourceIds = this.view.calendar.getEventResourceIds(event);
     if (resourceIds.length) {
       results = [];
       for (j = 0, len = resourceIds.length; j < len; j++) {
         resourceId = resourceIds[j];
-        results.push($.extend({}, range, {
+        results.push($.extend({}, eventRange, {
           resourceId: resourceId
         }));
       }
@@ -2709,18 +2712,28 @@ TimelineView = (function(superClass) {
 
   TimelineView.prototype.isScrolled = false;
 
+  TimelineView.prototype.usesMinMaxTime = true;
+
   TimelineView.prototype.initialize = function() {
-    this.timeGrid = this.instantiateGrid();
-    return this.intervalDuration = this.timeGrid.duration;
+    return this.timeGrid = this.instantiateGrid();
   };
 
   TimelineView.prototype.instantiateGrid = function() {
     return new TimelineGrid(this);
   };
 
-  TimelineView.prototype.setRange = function(range) {
-    TimelineView.__super__.setRange.apply(this, arguments);
-    return this.timeGrid.setRange(range);
+  TimelineView.prototype.setRangeFromDate = function(date) {
+    var isChange;
+    isChange = TimelineView.__super__.setRangeFromDate.apply(this, arguments);
+    if (isChange) {
+      this.timeGrid.initScaleProps();
+      this.timeGrid.setRange(this.renderRange);
+    }
+    return isChange;
+  };
+
+  TimelineView.prototype.getFallbackDuration = function() {
+    return this.timeGrid.computeFallbackDuration();
   };
 
   TimelineView.prototype.renderSkeleton = function() {
@@ -2845,7 +2858,7 @@ TimelineView = (function(superClass) {
       scrollTime = this.opt('scrollTime');
       if (scrollTime) {
         scrollTime = moment.duration(scrollTime);
-        left = this.timeGrid.dateToCoord(this.start.clone().time(scrollTime));
+        left = this.timeGrid.dateToCoord(this.activeRange.start.clone().time(scrollTime));
       }
     }
     return {
@@ -2940,10 +2953,6 @@ TimelineGrid = (function(superClass) {
 
   TimelineGrid.prototype.eventTitleFollower = null;
 
-  TimelineGrid.prototype.minTime = null;
-
-  TimelineGrid.prototype.maxTime = null;
-
   TimelineGrid.prototype.timeWindowMs = null;
 
   TimelineGrid.prototype.slotDuration = null;
@@ -2975,15 +2984,7 @@ TimelineGrid = (function(superClass) {
   TimelineGrid.prototype.innerEl = null;
 
   function TimelineGrid() {
-    var input;
     TimelineGrid.__super__.constructor.apply(this, arguments);
-    this.initScaleProps();
-    this.minTime = moment.duration(this.opt('minTime') || '00:00');
-    this.maxTime = moment.duration(this.opt('maxTime') || '24:00');
-    this.timeWindowMs = this.maxTime - this.minTime;
-    this.snapDuration = (input = this.opt('snapDuration')) ? moment.duration(input) : this.slotDuration;
-    this.minResizeDuration = this.snapDuration;
-    this.snapsPerSlot = divideDurationByDuration(this.slotDuration, this.snapDuration);
     this.slotWidth = this.opt('slotWidth');
   }
 
@@ -2996,7 +2997,7 @@ TimelineGrid = (function(superClass) {
     if (this.view.isHiddenDay(date)) {
       return false;
     } else if (this.isTimeScale) {
-      ms = date.time() - this.minTime;
+      ms = date.time() - this.view.minTime;
       ms = ((ms % 86400000) + 86400000) % 86400000;
       return ms < this.timeWindowMs;
     } else {
@@ -3065,9 +3066,10 @@ TimelineGrid = (function(superClass) {
     var date, slotDates;
     this.start = this.normalizeGridDate(this.start);
     this.end = this.normalizeGridDate(this.end);
+    this.timeWindowMs = this.view.maxTime - this.view.minTime;
     if (this.isTimeScale) {
-      this.start.add(this.minTime);
-      this.end.subtract(1, 'day').add(this.maxTime);
+      this.start.add(this.view.minTime);
+      this.end.subtract(1, 'day').add(this.view.maxTime);
     }
     slotDates = [];
     date = this.start.clone();
@@ -3426,7 +3428,7 @@ TimelineGrid = (function(superClass) {
 
   TimelineGrid.prototype.getNowIndicatorUnit = function() {
     if (this.isTimeScale) {
-      return computeIntervalUnit(this.slotDuration);
+      return computeGreatestUnit(this.slotDuration);
     }
   };
 
@@ -3813,7 +3815,12 @@ TimelineGrid = (function(superClass) {
   };
 
   TimelineGrid.prototype.renderEventResize = function(resizeLocation, seg) {
-    this.renderHighlight(this.eventToSpan(resizeLocation));
+    var eventSpan, eventSpans, j, len;
+    eventSpans = this.eventToSpans(resizeLocation);
+    for (j = 0, len = eventSpans.length; j < len; j++) {
+      eventSpan = eventSpans[j];
+      this.renderHighlight(eventSpan);
+    }
     return this.renderEventLocationHelper(resizeLocation, seg);
   };
 
@@ -3861,10 +3868,15 @@ TimelineGrid = (function(superClass) {
   };
 
   TimelineGrid.prototype.renderDrag = function(dropLocation, seg) {
+    var eventSpan, eventSpans, j, len;
     if (seg) {
       return this.renderEventLocationHelper(dropLocation, seg);
     } else {
-      this.renderHighlight(this.eventToSpan(dropLocation));
+      eventSpans = this.eventToSpans(dropLocation);
+      for (j = 0, len = eventSpans.length; j < len; j++) {
+        eventSpan = eventSpans[j];
+        this.renderHighlight(eventSpan);
+      }
       return null;
     }
   };
@@ -3955,7 +3967,6 @@ TimelineGrid.prototype.initScaleProps = function() {
   var input, slotUnit, type;
   this.labelInterval = this.queryDurationOption('slotLabelInterval');
   this.slotDuration = this.queryDurationOption('slotDuration');
-  this.ensureGridDuration();
   this.validateLabelAndSlot();
   this.ensureLabelInterval();
   this.ensureSlotDuration();
@@ -3963,17 +3974,19 @@ TimelineGrid.prototype.initScaleProps = function() {
   type = $.type(input);
   this.headerFormats = type === 'array' ? input : type === 'string' ? [input] : this.computeHeaderFormats();
   this.isTimeScale = durationHasTime(this.slotDuration);
-  this.largeUnit = !this.isTimeScale ? (slotUnit = computeIntervalUnit(this.slotDuration), /year|month|week/.test(slotUnit) ? slotUnit : void 0) : void 0;
-  return this.emphasizeWeeks = this.slotDuration.as('days') === 1 && this.duration.as('weeks') >= 2 && !this.opt('businessHours');
+  this.largeUnit = !this.isTimeScale ? (slotUnit = computeGreatestUnit(this.slotDuration), /year|month|week/.test(slotUnit) ? slotUnit : void 0) : void 0;
+  this.emphasizeWeeks = this.slotDuration.as('days') === 1 && this.view.currentRangeAs('weeks') >= 2 && !this.opt('businessHours');
 
   /*
-  	console.log('view duration =', @duration.humanize())
   	console.log('label interval =', @labelInterval.humanize())
   	console.log('slot duration =', @slotDuration.humanize())
   	console.log('header formats =', @headerFormats)
   	console.log('isTimeScale', @isTimeScale)
   	console.log('largeUnit', @largeUnit)
    */
+  this.snapDuration = (input = this.opt('snapDuration')) ? moment.duration(input) : this.slotDuration;
+  this.minResizeDuration = this.snapDuration;
+  return this.snapsPerSlot = divideDurationByDuration(this.slotDuration, this.snapDuration);
 };
 
 TimelineGrid.prototype.queryDurationOption = function(name) {
@@ -3988,16 +4001,17 @@ TimelineGrid.prototype.queryDurationOption = function(name) {
 };
 
 TimelineGrid.prototype.validateLabelAndSlot = function() {
-  var labelCnt, slotCnt, slotsPerLabel;
+  var currentRange, labelCnt, slotCnt, slotsPerLabel;
+  currentRange = this.view.currentRange;
   if (this.labelInterval) {
-    labelCnt = divideDurationByDuration(this.duration, this.labelInterval);
+    labelCnt = divideRangeByDuration(currentRange.start, currentRange.end, this.labelInterval);
     if (labelCnt > MAX_CELLS) {
       FC.warn('slotLabelInterval results in too many cells');
       this.labelInterval = null;
     }
   }
   if (this.slotDuration) {
-    slotCnt = divideDurationByDuration(this.duration, this.slotDuration);
+    slotCnt = divideRangeByDuration(currentRange.start, currentRange.end, this.slotDuration);
     if (slotCnt > MAX_CELLS) {
       FC.warn('slotDuration results in too many cells');
       this.slotDuration = null;
@@ -4012,38 +4026,30 @@ TimelineGrid.prototype.validateLabelAndSlot = function() {
   }
 };
 
-TimelineGrid.prototype.ensureGridDuration = function() {
-  var gridDuration, input, j, labelCnt, labelInterval;
-  gridDuration = this.duration;
-  if (!gridDuration) {
-    gridDuration = this.view.intervalDuration;
-    if (!gridDuration) {
-      if (!this.labelInterval && !this.slotDuration) {
-        gridDuration = moment.duration(DEFAULT_GRID_DURATION);
-      } else {
-        labelInterval = this.ensureLabelInterval();
-        for (j = STOCK_SUB_DURATIONS.length - 1; j >= 0; j += -1) {
-          input = STOCK_SUB_DURATIONS[j];
-          gridDuration = moment.duration(input);
-          labelCnt = divideDurationByDuration(gridDuration, labelInterval);
-          if (labelCnt >= MIN_AUTO_LABELS) {
-            break;
-          }
-        }
+TimelineGrid.prototype.computeFallbackDuration = function() {
+  var duration, input, j, labelCnt, labelInterval;
+  duration = null;
+  if (!this.labelInterval && !this.slotDuration) {
+    duration = moment.duration(DEFAULT_GRID_DURATION);
+  } else {
+    labelInterval = this.ensureLabelInterval();
+    for (j = STOCK_SUB_DURATIONS.length - 1; j >= 0; j += -1) {
+      input = STOCK_SUB_DURATIONS[j];
+      duration = moment.duration(input);
+      labelCnt = divideDurationByDuration(duration, labelInterval);
+      if (labelCnt >= MIN_AUTO_LABELS) {
+        break;
       }
     }
-    this.duration = gridDuration;
   }
-  return gridDuration;
+  return duration;
 };
 
 TimelineGrid.prototype.ensureLabelInterval = function() {
-  var input, j, k, labelCnt, labelInterval, len, len1, slotsPerLabel, tryLabelInterval;
+  var currentRange, input, j, k, labelCnt, labelInterval, len, len1, slotsPerLabel, tryLabelInterval;
+  currentRange = this.view.currentRange;
   labelInterval = this.labelInterval;
   if (!labelInterval) {
-    if (!this.duration && !this.slotDuration) {
-      this.ensureGridDuration();
-    }
     if (this.slotDuration) {
       for (j = 0, len = STOCK_SUB_DURATIONS.length; j < len; j++) {
         input = STOCK_SUB_DURATIONS[j];
@@ -4061,7 +4067,7 @@ TimelineGrid.prototype.ensureLabelInterval = function() {
       for (k = 0, len1 = STOCK_SUB_DURATIONS.length; k < len1; k++) {
         input = STOCK_SUB_DURATIONS[k];
         labelInterval = moment.duration(input);
-        labelCnt = divideDurationByDuration(this.duration, labelInterval);
+        labelCnt = divideRangeByDuration(currentRange.start, currentRange.end, labelInterval);
         if (labelCnt >= MIN_AUTO_LABELS) {
           break;
         }
@@ -4073,7 +4079,8 @@ TimelineGrid.prototype.ensureLabelInterval = function() {
 };
 
 TimelineGrid.prototype.ensureSlotDuration = function() {
-  var input, j, labelInterval, len, slotCnt, slotDuration, slotsPerLabel, trySlotDuration;
+  var currentRange, input, j, labelInterval, len, slotCnt, slotDuration, slotsPerLabel, trySlotDuration;
+  currentRange = this.view.currentRange;
   slotDuration = this.slotDuration;
   if (!slotDuration) {
     labelInterval = this.ensureLabelInterval();
@@ -4086,8 +4093,8 @@ TimelineGrid.prototype.ensureSlotDuration = function() {
         break;
       }
     }
-    if (slotDuration && this.duration) {
-      slotCnt = divideDurationByDuration(this.duration, slotDuration);
+    if (slotDuration) {
+      slotCnt = divideRangeByDuration(currentRange.start, currentRange.end, slotDuration);
       if (slotCnt > MAX_AUTO_CELLS) {
         slotDuration = null;
       }
@@ -4101,11 +4108,10 @@ TimelineGrid.prototype.ensureSlotDuration = function() {
 };
 
 TimelineGrid.prototype.computeHeaderFormats = function() {
-  var format0, format1, format2, gridDuration, labelInterval, unit, view, weekNumbersVisible;
+  var format0, format1, format2, labelInterval, unit, view, weekNumbersVisible;
   view = this.view;
-  gridDuration = this.duration;
   labelInterval = this.labelInterval;
-  unit = computeIntervalUnit(labelInterval);
+  unit = computeGreatestUnit(labelInterval);
   weekNumbersVisible = this.opt('weekNumbers');
   format0 = format1 = format2 = null;
   if (unit === 'week' && !weekNumbersVisible) {
@@ -4116,21 +4122,21 @@ TimelineGrid.prototype.computeHeaderFormats = function() {
       format0 = 'YYYY';
       break;
     case 'month':
-      if (gridDuration.asYears() > 1) {
+      if (view.currentRangeAs('years') > 1) {
         format0 = 'YYYY';
       }
       format1 = 'MMM';
       break;
     case 'week':
-      if (gridDuration.asYears() > 1) {
+      if (view.currentRangeAs('years') > 1) {
         format0 = 'YYYY';
       }
       format1 = this.opt('shortWeekFormat');
       break;
     case 'day':
-      if (gridDuration.asYears() > 1) {
+      if (view.currentRangeAs('years') > 1) {
         format0 = this.opt('monthYearFormat');
-      } else if (gridDuration.asMonths() > 1) {
+      } else if (view.currentRangeAs('months') > 1) {
         format0 = 'MMMM';
       }
       if (weekNumbersVisible) {
@@ -4142,7 +4148,7 @@ TimelineGrid.prototype.computeHeaderFormats = function() {
       if (weekNumbersVisible) {
         format0 = this.opt('weekFormat');
       }
-      if (gridDuration.asDays() > 1) {
+      if (view.currentRangeAs('days') > 1) {
         format1 = this.opt('dayOfMonthFormat');
       }
       format2 = this.opt('smallTimeFormat');
@@ -6436,7 +6442,7 @@ ResourceAgendaView = (function(superClass) {
 
 FC.views.agenda.queryResourceClass = function(viewSpec) {
   var ref;
-  if ((ref = viewSpec.options.groupByResource || viewSpec.options.groupByDateAndResource) != null ? ref : viewSpec.duration.as('days') === 1) {
+  if ((ref = viewSpec.options.groupByResource || viewSpec.options.groupByDateAndResource) != null ? ref : viewSpec.duration && viewSpec.duration.as('days') === 1) {
     return ResourceAgendaView;
   }
 };
@@ -6499,7 +6505,7 @@ ResourceMonthView = (function(superClass) {
 
 FC.views.basic.queryResourceClass = function(viewSpec) {
   var ref;
-  if ((ref = viewSpec.options.groupByResource || viewSpec.options.groupByDateAndResource) != null ? ref : viewSpec.duration.as('days') === 1) {
+  if ((ref = viewSpec.options.groupByResource || viewSpec.options.groupByDateAndResource) != null ? ref : viewSpec.duration && viewSpec.duration.as('days') === 1) {
     return ResourceBasicView;
   }
 };
@@ -6510,7 +6516,7 @@ FC.views.month.queryResourceClass = function(viewSpec) {
   }
 };
 
-RELEASE_DATE = '2017-02-14';
+RELEASE_DATE = '2017-03-23';
 
 UPGRADE_WINDOW = {
   years: 1,
